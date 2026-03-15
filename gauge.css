@@ -1,0 +1,296 @@
+/* ============================================
+   CLAUDE FUEL GAUGE — Persistent Top Bar
+   ============================================ */
+
+#claude-fuel-gauge {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483647;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #e8e4df;
+  background: linear-gradient(180deg, #1a1816 0%, #201e1b 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#claude-fuel-gauge.cfg-collapsed {
+  height: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#claude-fuel-gauge.cfg-collapsed .cfg-section,
+#claude-fuel-gauge.cfg-collapsed .cfg-divider,
+#claude-fuel-gauge.cfg-collapsed .cfg-controls {
+  display: none;
+}
+
+#claude-fuel-gauge.cfg-collapsed::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: linear-gradient(90deg, 
+    var(--cfg-session-color, #c97a2e) 0%, 
+    var(--cfg-session-color, #c97a2e) var(--cfg-session-pct, 20%), 
+    rgba(255,255,255,0.05) var(--cfg-session-pct, 20%)
+  );
+}
+
+/* Push page content down */
+#claude-fuel-gauge ~ *,
+body.cfg-active {
+  /* handled via JS */
+}
+
+/* Sections */
+.cfg-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfg-label {
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ── Per-section color identities ── */
+
+/* USED (Session) = Warm amber/gold — the "timer" feel */
+#cfg-session .cfg-label {
+  color: #e8b955;
+  background: rgba(232, 185, 85, 0.1);
+  border: 1px solid rgba(232, 185, 85, 0.15);
+}
+#cfg-session .cfg-pct {
+  color: #e8b955;
+}
+#cfg-session .cfg-time {
+  color: rgba(232, 185, 85, 0.4);
+}
+#cfg-session .cfg-gauge-wrap {
+  background: rgba(232, 185, 85, 0.08);
+}
+
+/* WEEKLY = Teal/cyan — the "calendar" feel */
+#cfg-weekly .cfg-label {
+  color: #5ec4b8;
+  background: rgba(94, 196, 184, 0.1);
+  border: 1px solid rgba(94, 196, 184, 0.15);
+}
+#cfg-weekly .cfg-pct {
+  color: #5ec4b8;
+}
+#cfg-weekly .cfg-time {
+  color: rgba(94, 196, 184, 0.4);
+}
+#cfg-weekly .cfg-gauge-wrap {
+  background: rgba(94, 196, 184, 0.08);
+}
+
+/* SONNET = Soft periwinkle/blue — the "model" feel */
+#cfg-sonnet .cfg-label {
+  color: #8b9fd9;
+  background: rgba(139, 159, 217, 0.1);
+  border: 1px solid rgba(139, 159, 217, 0.15);
+}
+#cfg-sonnet .cfg-pct {
+  color: #8b9fd9;
+}
+#cfg-sonnet .cfg-time {
+  color: rgba(139, 159, 217, 0.4);
+}
+#cfg-sonnet .cfg-gauge-wrap {
+  background: rgba(139, 159, 217, 0.08);
+}
+
+.cfg-gauge-wrap {
+  position: relative;
+  width: 120px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cfg-gauge-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease;
+  min-width: 2px;
+}
+
+/* Color states — SESSION (amber scale) */
+#cfg-session .cfg-gauge-fill.cfg-level-ok {
+  background: linear-gradient(90deg, #c9a23e, #e8b955);
+  box-shadow: 0 0 6px rgba(232, 185, 85, 0.3);
+}
+#cfg-session .cfg-gauge-fill.cfg-level-mid {
+  background: linear-gradient(90deg, #c97a2e, #d4943e);
+  box-shadow: 0 0 6px rgba(201, 122, 46, 0.3);
+}
+#cfg-session .cfg-gauge-fill.cfg-level-low {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.35);
+  animation: cfg-pulse-low 2s ease-in-out infinite;
+}
+
+/* Color states — WEEKLY (teal scale) */
+#cfg-weekly .cfg-gauge-fill.cfg-level-ok {
+  background: linear-gradient(90deg, #3da89b, #5ec4b8);
+  box-shadow: 0 0 6px rgba(94, 196, 184, 0.3);
+}
+#cfg-weekly .cfg-gauge-fill.cfg-level-mid {
+  background: linear-gradient(90deg, #c97a2e, #d4943e);
+  box-shadow: 0 0 6px rgba(201, 122, 46, 0.3);
+}
+#cfg-weekly .cfg-gauge-fill.cfg-level-low {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.35);
+  animation: cfg-pulse-low 2s ease-in-out infinite;
+}
+
+/* Color states — SONNET (periwinkle scale) */
+#cfg-sonnet .cfg-gauge-fill.cfg-level-ok {
+  background: linear-gradient(90deg, #6b80c4, #8b9fd9);
+  box-shadow: 0 0 6px rgba(139, 159, 217, 0.3);
+}
+#cfg-sonnet .cfg-gauge-fill.cfg-level-mid {
+  background: linear-gradient(90deg, #c97a2e, #d4943e);
+  box-shadow: 0 0 6px rgba(201, 122, 46, 0.3);
+}
+#cfg-sonnet .cfg-gauge-fill.cfg-level-low {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.35);
+  animation: cfg-pulse-low 2s ease-in-out infinite;
+}
+
+@keyframes cfg-pulse-low {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.cfg-pct {
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: right;
+  color: #e8e4df;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.cfg-time {
+  color: rgba(232, 228, 223, 0.35);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* Divider */
+.cfg-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Controls */
+.cfg-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.cfg-btn {
+  background: none;
+  border: none;
+  color: rgba(232, 228, 223, 0.3);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 3px;
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.cfg-btn:hover {
+  color: rgba(232, 228, 223, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Glowing collapse/expand button */
+#cfg-collapse {
+  color: #e8b955;
+  text-shadow: 0 0 6px rgba(232, 185, 85, 0.6), 0 0 12px rgba(232, 185, 85, 0.3);
+  animation: cfg-glow-pulse 2.5s ease-in-out infinite;
+}
+
+#cfg-collapse:hover {
+  color: #f0c95f;
+  text-shadow: 0 0 8px rgba(232, 185, 85, 0.8), 0 0 18px rgba(232, 185, 85, 0.5);
+  background: rgba(232, 185, 85, 0.1);
+}
+
+@keyframes cfg-glow-pulse {
+  0%, 100% { text-shadow: 0 0 6px rgba(232, 185, 85, 0.6), 0 0 12px rgba(232, 185, 85, 0.3); }
+  50% { text-shadow: 0 0 10px rgba(232, 185, 85, 0.9), 0 0 20px rgba(232, 185, 85, 0.5); }
+}
+
+/* Tooltip on hover */
+.cfg-section[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #2a2725;
+  color: #e8e4df;
+  font-size: 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.cfg-section {
+  position: relative;
+}
+
+/* Sonnet fill now handled by per-section color system above */
+
+/* Refresh spinner */
+.cfg-btn.cfg-spinning {
+  animation: cfg-spin 0.8s linear infinite;
+}
+
+@keyframes cfg-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

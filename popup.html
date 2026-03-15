@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 280px;
+      font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #1a1816;
+      color: #e8e4df;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1 span { font-size: 18px; }
+    .status {
+      font-size: 9px;
+      color: rgba(232,228,223,0.35);
+      margin-bottom: 14px;
+    }
+    .status .ok { color: #6aad6d; }
+    .meter { margin-bottom: 12px; }
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .meter-name {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .meter-value {
+      font-size: 12px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .meter-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .meter-fill.ok { background: linear-gradient(90deg, #5b9a5e, #6aad6d); }
+    .meter-fill.mid { background: linear-gradient(90deg, #c97a2e, #d4943e); }
+    .meter-fill.low { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+    #session-fill.ok { background: linear-gradient(90deg, #c9a23e, #e8b955); }
+    #weekly-fill.ok { background: linear-gradient(90deg, #3da89b, #5ec4b8); }
+    #sonnet-fill.ok { background: linear-gradient(90deg, #6b80c4, #8b9fd9); }
+    .meter.meter-session .meter-name { color: #e8b955; }
+    .meter.meter-session .meter-value { color: #e8b955; }
+    .meter.meter-session .meter-time { color: rgba(232, 185, 85, 0.45); }
+    .meter.meter-session .meter-bar { background: rgba(232, 185, 85, 0.08); }
+    .meter.meter-weekly .meter-name { color: #5ec4b8; }
+    .meter.meter-weekly .meter-value { color: #5ec4b8; }
+    .meter.meter-weekly .meter-time { color: rgba(94, 196, 184, 0.45); }
+    .meter.meter-weekly .meter-bar { background: rgba(94, 196, 184, 0.08); }
+    .meter.meter-sonnet .meter-name { color: #8b9fd9; }
+    .meter.meter-sonnet .meter-value { color: #8b9fd9; }
+    .meter.meter-sonnet .meter-time { color: rgba(139, 159, 217, 0.45); }
+    .meter.meter-sonnet .meter-bar { background: rgba(139, 159, 217, 0.08); }
+    .meter-time {
+      font-size: 9px;
+      color: rgba(232,228,223,0.35);
+      margin-top: 3px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .action-btn {
+      flex: 1;
+      padding: 7px 0;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      color: #e8e4df;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .action-btn:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .action-btn.primary {
+      background: rgba(232, 185, 85, 0.15);
+      border-color: rgba(232, 185, 85, 0.3);
+      color: #e8b955;
+    }
+    .action-btn.primary:hover {
+      background: rgba(232, 185, 85, 0.25);
+    }
+    .footer {
+      margin-top: 10px;
+      font-size: 9px;
+      color: rgba(232,228,223,0.2);
+      text-align: center;
+    }
+    a { color: rgba(232,228,223,0.35); text-decoration: none; }
+    a:hover { color: #e8e4df; }
+  </style>
+</head>
+<body>
+  <h1><span>⛽</span> Claude Fuel Gauge</h1>
+  <div class="status" id="status">Checking...</div>
+
+  <div class="meter meter-session">
+    <div class="meter-label">
+      <span class="meter-name">Used (5hr session)</span>
+      <span class="meter-value" id="session-val">—</span>
+    </div>
+    <div class="meter-bar">
+      <div class="meter-fill ok" id="session-fill" style="width:0%"></div>
+    </div>
+    <div class="meter-time" id="session-time"></div>
+  </div>
+
+  <div class="meter meter-weekly">
+    <div class="meter-label">
+      <span class="meter-name">Weekly — All Models</span>
+      <span class="meter-value" id="weekly-val">—</span>
+    </div>
+    <div class="meter-bar">
+      <div class="meter-fill ok" id="weekly-fill" style="width:0%"></div>
+    </div>
+    <div class="meter-time" id="weekly-time"></div>
+  </div>
+
+  <div class="meter meter-sonnet">
+    <div class="meter-label">
+      <span class="meter-name">Weekly — Sonnet Only</span>
+      <span class="meter-value" id="sonnet-val">—</span>
+    </div>
+    <div class="meter-bar">
+      <div class="meter-fill ok" id="sonnet-fill" style="width:0%"></div>
+    </div>
+    <div class="meter-time" id="sonnet-time"></div>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn primary" id="btn-inject">⛽ Activate All Tabs</button>
+    <button class="action-btn" id="btn-refresh">⟳ Refresh Data</button>
+  </div>
+
+  <div class="footer">
+    <a href="https://claude.ai/settings/usage" target="_blank">Open Usage Settings →</a>
+  </div>
+
+  <script>
+    // ── On popup open: immediately inject gauge into all Claude tabs ──
+    chrome.runtime.sendMessage({ type: 'cfg-inject-all' });
+
+    // ── Render cached data ──
+    chrome.storage.local.get(['cfgState'], (res) => {
+      const s = res.cfgState || {};
+      render('session', s.session);
+      render('weekly', s.weeklyAll);
+      render('sonnet', s.weeklySonnet);
+
+      if (s.lastUpdated) {
+        const ago = Math.round((Date.now() - s.lastUpdated) / 60000);
+        const statusEl = document.getElementById('status');
+        statusEl.innerHTML = ago < 1
+          ? '<span class="ok">●</span> Updated just now'
+          : '<span class="ok">●</span> Updated ' + ago + 'm ago';
+      }
+    });
+
+    function render(prefix, data) {
+      const fill = document.getElementById(prefix + '-fill');
+      const val = document.getElementById(prefix + '-val');
+      const time = document.getElementById(prefix + '-time');
+      if (!data || data.pct === null || data.pct === undefined) { val.textContent = '—'; return; }
+      const used = data.pct;
+      const remaining = Math.max(0, 100 - used);
+      fill.style.width = used + '%';
+      fill.className = 'meter-fill ' + (used >= 80 ? 'low' : used >= 50 ? 'mid' : 'ok');
+      val.textContent = used + '% used';
+      if (used >= 80) val.style.color = '#e74c3c';
+      const t = data.time || data.remaining || data.resets || '';
+      if (t) time.textContent = 'Resets ' + t;
+    }
+
+    // ── Buttons ──
+    document.getElementById('btn-inject').addEventListener('click', () => {
+      const btn = document.getElementById('btn-inject');
+      btn.textContent = '✓ Injected!';
+      btn.style.opacity = '0.6';
+      chrome.runtime.sendMessage({ type: 'cfg-inject-all' });
+      setTimeout(() => { btn.textContent = '⛽ Activate All Tabs'; btn.style.opacity = '1'; }, 2000);
+    });
+
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      const btn = document.getElementById('btn-refresh');
+      btn.textContent = '⟳ Refreshing...';
+      btn.style.opacity = '0.6';
+      chrome.runtime.sendMessage({ type: 'cfg-refresh-manual' }, () => {
+        setTimeout(() => {
+          chrome.storage.local.get(['cfgState'], (res) => {
+            const s = res.cfgState || {};
+            render('session', s.session);
+            render('weekly', s.weeklyAll);
+            render('sonnet', s.weeklySonnet);
+            btn.textContent = '⟳ Refresh Data';
+            btn.style.opacity = '1';
+          });
+        }, 5000);
+      });
+    });
+  </script>
+</body>
+</html>
