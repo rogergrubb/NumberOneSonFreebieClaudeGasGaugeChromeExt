@@ -213,7 +213,17 @@
 
   function tryReadSettings() {
     if (window.location.href.indexOf('/settings') === -1) return false;
+
+    // CRITICAL: We must exclude our own gauge bar from the text,
+    // because it contains "% used" in tooltips which would pollute
+    // the regex extraction with stale/self-referencing data.
+    var gauge = document.getElementById(GAUGE_ID);
+    if (gauge) gauge.style.display = 'none';
+
     var text = (document.body && (document.body.innerText || document.body.textContent)) || '';
+
+    if (gauge) gauge.style.display = '';
+
     if (text.indexOf('% used') === -1) return false;
     chrome.runtime.sendMessage({ type: 'cfg-settings-data', text: text });
     return true;

@@ -106,7 +106,15 @@ async function readSettingsFromTab(tabId) {
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => document.body ? (document.body.innerText || '') : '',
+      func: () => {
+        // Hide our gauge bar so its tooltip text ("X% used")
+        // doesn't pollute the extraction
+        var g = document.getElementById('claude-fuel-gauge');
+        if (g) g.style.display = 'none';
+        var text = document.body ? (document.body.innerText || '') : '';
+        if (g) g.style.display = '';
+        return text;
+      },
     });
 
     if (results && results[0] && results[0].result) {
