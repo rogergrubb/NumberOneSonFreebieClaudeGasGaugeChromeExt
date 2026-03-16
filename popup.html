@@ -167,67 +167,6 @@
     <a href="https://claude.ai/settings/usage" target="_blank">Open Usage Settings →</a>
   </div>
 
-  <script>
-    // ── On popup open: immediately inject gauge into all Claude tabs ──
-    chrome.runtime.sendMessage({ type: 'cfg-inject-all' });
-
-    // ── Render cached data ──
-    chrome.storage.local.get(['cfgState'], (res) => {
-      const s = res.cfgState || {};
-      render('session', s.session);
-      render('weekly', s.weeklyAll);
-      render('sonnet', s.weeklySonnet);
-
-      if (s.lastUpdated) {
-        const ago = Math.round((Date.now() - s.lastUpdated) / 60000);
-        const statusEl = document.getElementById('status');
-        statusEl.innerHTML = ago < 1
-          ? '<span class="ok">●</span> Updated just now'
-          : '<span class="ok">●</span> Updated ' + ago + 'm ago';
-      }
-    });
-
-    function render(prefix, data) {
-      const fill = document.getElementById(prefix + '-fill');
-      const val = document.getElementById(prefix + '-val');
-      const time = document.getElementById(prefix + '-time');
-      if (!data || data.pct === null || data.pct === undefined) { val.textContent = '—'; return; }
-      const used = data.pct;
-      const remaining = Math.max(0, 100 - used);
-      fill.style.width = used + '%';
-      fill.className = 'meter-fill ' + (used >= 80 ? 'low' : used >= 50 ? 'mid' : 'ok');
-      val.textContent = used + '% used';
-      if (used >= 80) val.style.color = '#e74c3c';
-      const t = data.time || data.remaining || data.resets || '';
-      if (t) time.textContent = 'Resets ' + t;
-    }
-
-    // ── Buttons ──
-    document.getElementById('btn-inject').addEventListener('click', () => {
-      const btn = document.getElementById('btn-inject');
-      btn.textContent = '✓ Injected!';
-      btn.style.opacity = '0.6';
-      chrome.runtime.sendMessage({ type: 'cfg-inject-all' });
-      setTimeout(() => { btn.textContent = '⛽ Activate All Tabs'; btn.style.opacity = '1'; }, 2000);
-    });
-
-    document.getElementById('btn-refresh').addEventListener('click', () => {
-      const btn = document.getElementById('btn-refresh');
-      btn.textContent = '⟳ Refreshing...';
-      btn.style.opacity = '0.6';
-      chrome.runtime.sendMessage({ type: 'cfg-refresh-manual' }, () => {
-        setTimeout(() => {
-          chrome.storage.local.get(['cfgState'], (res) => {
-            const s = res.cfgState || {};
-            render('session', s.session);
-            render('weekly', s.weeklyAll);
-            render('sonnet', s.weeklySonnet);
-            btn.textContent = '⟳ Refresh Data';
-            btn.style.opacity = '1';
-          });
-        }, 5000);
-      });
-    });
-  </script>
+  <script src="popup.js"></script>
 </body>
 </html>
