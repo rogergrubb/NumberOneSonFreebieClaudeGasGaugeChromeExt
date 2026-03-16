@@ -95,6 +95,10 @@
         '<span class="cfg-pct" id="cfg-sonnet-pct">\u2014</span>' +
         '<span class="cfg-time" id="cfg-sonnet-time"></span>' +
       '</div>' +
+      '<div class="cfg-divider"></div>' +
+      '<a class="cfg-coffee" href="https://buy.stripe.com/aFaeVf6Qw8xT3vM9OEaIM0T" target="_blank" title="Buy the developer a coffee — $5">' +
+        '\u2615 Buy Me a Coffee' +
+      '</a>' +
       '<div class="cfg-controls">' +
         '<button class="cfg-btn" id="cfg-refresh" title="Refresh usage data">\u27F3</button>' +
         '<button class="cfg-btn" id="cfg-collapse" title="Minimize/expand">\u25B2</button>' +
