@@ -143,7 +143,7 @@
   }
 
   function applySpacing(expanded) {
-    document.body.style.setProperty('padding-top', expanded ? '36px' : '6px', 'important');
+    document.body.style.setProperty('padding-top', expanded ? '38px' : '6px', 'important');
   }
 
   function ensureGauge() {
