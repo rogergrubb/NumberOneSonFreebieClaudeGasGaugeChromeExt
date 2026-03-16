@@ -1,20 +1,29 @@
 // ============================================
-// CLAUDE FUEL GAUGE — Content Script v3.1
+// CLAUDE FUEL GAUGE — Content Script v3.3
 // ============================================
-// Pure UI: renders gauge, listens for storage updates.
-// If on /settings page, reads DOM and sends data to background.
-// No CORS fetching — background.js handles all that.
-// Designed to be safely re-injected (idempotent).
+// Uses DOM-based existence check instead of window flag
+// so re-injection from background.js always works even
+// after React wipes the gauge element.
 // ============================================
 
 (function () {
   'use strict';
 
-  // Prevent double-injection
-  if (window.__cfgLoaded) return;
-  window.__cfgLoaded = true;
-
   var GAUGE_ID = 'claude-fuel-gauge';
+  var MARKER_ID = 'cfg-script-loaded';
+
+  // If our script marker AND gauge both exist, we're already running
+  if (document.getElementById(MARKER_ID) && document.getElementById(GAUGE_ID)) return;
+
+  // Drop a hidden marker so we know the listeners are registered
+  // (even if gauge gets wiped, we don't re-register listeners)
+  var listenersRegistered = !!document.getElementById(MARKER_ID);
+  if (!listenersRegistered) {
+    var marker = document.createElement('div');
+    marker.id = MARKER_ID;
+    marker.style.display = 'none';
+    document.documentElement.appendChild(marker);
+  }
 
   var state = {
     session: { pct: null, time: '' },
@@ -46,29 +55,36 @@
   }
 
   // ─── LISTEN FOR DATA UPDATES ─────────────────
+  // Only register once (guard by marker)
 
-  chrome.runtime.onMessage.addListener(function (msg) {
-    if (msg.type === 'cfg-data-updated') {
-      chrome.storage.local.get(['cfgState'], function (res) {
-        if (res.cfgState) {
-          state = merge(state, res.cfgState);
-          updateDisplay();
-        }
-      });
-    }
-  });
+  if (!listenersRegistered) {
+    chrome.runtime.onMessage.addListener(function (msg) {
+      if (msg.type === 'cfg-data-updated') {
+        chrome.storage.local.get(['cfgState'], function (res) {
+          if (res.cfgState) {
+            state = merge(state, res.cfgState);
+            ensureGauge();
+            updateDisplay();
+          }
+        });
+      }
+    });
 
-  chrome.storage.onChanged.addListener(function (changes) {
-    if (changes.cfgState && changes.cfgState.newValue) {
-      state = merge(state, changes.cfgState.newValue);
-      updateDisplay();
-    }
-  });
+    chrome.storage.onChanged.addListener(function (changes) {
+      if (changes.cfgState && changes.cfgState.newValue) {
+        state = merge(state, changes.cfgState.newValue);
+        ensureGauge();
+        updateDisplay();
+      }
+    });
+  }
 
   // ─── GAUGE DOM ───────────────────────────────
 
   function createGauge() {
-    if (document.getElementById(GAUGE_ID)) return;
+    // Remove any stale gauge first
+    var existing = document.getElementById(GAUGE_ID);
+    if (existing) existing.remove();
 
     var bar = document.createElement('div');
     bar.id = GAUGE_ID;
@@ -107,6 +123,8 @@
     document.documentElement.appendChild(bar);
     applySpacing(!state.collapsed);
 
+    // Event listeners are on the element itself, so they
+    // need to be re-attached every time we recreate
     document.getElementById('cfg-collapse').addEventListener('click', function (e) {
       e.stopPropagation();
       state.collapsed = !state.collapsed;
@@ -143,7 +161,9 @@
   }
 
   function applySpacing(expanded) {
-    document.body.style.setProperty('padding-top', expanded ? '38px' : '6px', 'important');
+    if (document.body) {
+      document.body.style.setProperty('padding-top', expanded ? '38px' : '6px', 'important');
+    }
   }
 
   function ensureGauge() {
@@ -231,8 +251,12 @@
     }
     createGauge();
     updateDisplay();
-    watchSettings();
-    watchNav();
-    setInterval(ensureGauge, 3000);
+
+    // Only set up watchers once (first injection)
+    if (!listenersRegistered) {
+      watchSettings();
+      watchNav();
+      setInterval(ensureGauge, 3000);
+    }
   }
 })();

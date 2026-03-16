@@ -178,16 +178,20 @@ async function injectIntoAllClaudeTabs() {
 
 async function injectIntoTab(tabId) {
   try {
-    // Check if already injected
+    // Always inject CSS (idempotent — Chrome deduplicates)
+    await chrome.scripting.insertCSS({ target: { tabId }, files: ['gauge.css'] });
+
+    // Check if gauge DOM element exists
     const check = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => !!window.__cfgLoaded,
+      func: () => !!document.getElementById('claude-fuel-gauge'),
     });
 
-    if (check && check[0] && check[0].result) return; // already loaded
-
-    await chrome.scripting.insertCSS({ target: { tabId }, files: ['gauge.css'] });
-    await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+    // If gauge element is missing, inject the script
+    // (content.js handles its own listener dedup via a hidden marker)
+    if (!check || !check[0] || !check[0].result) {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+    }
   } catch (err) {
     // Tab not ready or restricted
   }
